@@ -5,5 +5,5 @@
   "documentation": "https://example.com",
   "requirements": [],
   "dependencies": [],
-  "codeowners": ["@psopso"],
+  "codeowners": ["@psopso"]
 }
