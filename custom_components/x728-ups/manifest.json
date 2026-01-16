@@ -1,0 +1,9 @@
+{
+  "domain": "x728ups",
+  "name": "X728 UPS",
+  "version": "1.0.0",
+  "documentation": "https://example.com",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@psopso"],
+}
