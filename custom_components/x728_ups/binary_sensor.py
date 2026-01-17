@@ -14,7 +14,7 @@ class X728PowerLoss(BinarySensorEntity):
 
     @property
     def is_on(self):
-        return self.coordinator.data["power_loss"]
+        return bool(self.coordinator.data.get("power_loss"))
 
     async def async_update(self):
         await self.coordinator.async_request_refresh()

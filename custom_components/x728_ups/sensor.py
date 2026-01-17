@@ -17,7 +17,7 @@ class X728Voltage(SensorEntity):
 
     @property
     def state(self):
-        return self.coordinator.data["voltage"]
+        return self.coordinator.data.get("voltage")
 
     async def async_update(self):
         await self.coordinator.async_request_refresh()
