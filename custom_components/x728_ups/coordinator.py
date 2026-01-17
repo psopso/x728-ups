@@ -3,7 +3,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.core import HomeAssistant
 import gpiod
 from gpiod.line import Direction, Value
-from smbus2 import SMBus, SMBusError
+from smbus2 import SMBus
 from .const import *
 
 import logging
@@ -66,12 +66,10 @@ class X728Coordinator(DataUpdateCoordinator):
             data["capacity"] = round(raw_c / 256, 1)
 
         except OSError as err:
-            # typicky Errno 5, i2c busy, device missing, power off
             _LOGGER.warning("I2C read failed: %s", err)
             data["voltage"] = None
             data["capacity"] = None
-
-        return data
+            return data
 
     async def shutdown_host(self):
         # pulz pro X728 (cca 2 s)
