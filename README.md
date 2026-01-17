@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **WORK IN PROGRESS / EXPERIMENTAL**
+>
+> This integration is currently under active development. It is **not finished** and may not work as expected.
+> Published primarily for easier installation via HACS on my personal setup. Use at your own risk.
 # Suptronics X728 UPS Integration for Home Assistant
 
 This custom component provides native support for the **Suptronics X728 UPS"** (Uninterruptible Power Supply) expansion board. It allows Home Assistant to monitor battery health and manage safe shutdowns during power outages.
