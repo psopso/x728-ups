@@ -1,0 +1,3 @@
+shutdown_host:
+  name: Shutdown host
+  description: Send shutdown signal to Suptronics X728
