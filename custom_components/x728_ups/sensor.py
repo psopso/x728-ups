@@ -1,8 +1,8 @@
 from homeassistant.components.sensor import SensorEntity
 from .const import DOMAIN
 
-async def async_setup_platform(hass, config, add_entities, discovery_info=None):
-    coordinator = hass.data[DOMAIN]["coordinator"]
+async def async_setup_entry(hass, entry, async_add_entities):
+    coordinator = hass.data["x728_ups"][entry.entry_id]
     add_entities([
         X728Voltage(coordinator),
         X728Capacity(coordinator),
