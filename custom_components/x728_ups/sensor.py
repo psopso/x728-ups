@@ -1,48 +1,37 @@
 from homeassistant.components.sensor import SensorEntity
-from smbus2 import SMBus
-from .const import *
+from .const import DOMAIN
 
 async def async_setup_platform(hass, config, add_entities, discovery_info=None):
-    bus = SMBus(I2C_BUS)
+    coordinator = hass.data[DOMAIN]["coordinator"]
     add_entities([
-        X728Voltage(bus),
-        X728Capacity(bus),
+        X728Voltage(coordinator),
+        X728Capacity(coordinator),
     ])
-
 
 class X728Voltage(SensorEntity):
     _attr_name = "X728 Battery Voltage"
     _attr_unit_of_measurement = "V"
-    _attr_icon = "mdi:battery"
 
-    def __init__(self, bus):
-        self.bus = bus
-        self._state = None
-
-    def update(self):
-        raw = self.bus.read_word_data(I2C_ADDR, REG_VOLTAGE)
-        raw = ((raw >> 8) | (raw << 8)) & 0xFFFF
-        self._state = round(raw * 1.25 / 1000, 2)
+    def __init__(self, coordinator):
+        self.coordinator = coordinator
 
     @property
     def state(self):
-        return self._state
+        return self.coordinator.data["voltage"]
 
+    async def async_update(self):
+        await self.coordinator.async_request_refresh()
 
 class X728Capacity(SensorEntity):
     _attr_name = "X728 Battery Capacity"
     _attr_unit_of_measurement = "%"
-    _attr_icon = "mdi:battery-percent"
 
-    def __init__(self, bus):
-        self.bus = bus
-        self._state = None
-
-    def update(self):
-        raw = self.bus.read_word_data(I2C_ADDR, REG_CAPACITY)
-        raw = ((raw >> 8) | (raw << 8)) & 0xFFFF
-        self._state = round(raw / 256, 1)
+    def __init__(self, coordinator):
+        self.coordinator = coordinator
 
     @property
     def state(self):
-        return self._state
+        return self.coordinator.data["capacity"]
+
+    async def async_update(self):
+        await self.coordinator.async_request_refresh()
