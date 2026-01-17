@@ -1,6 +1,11 @@
 from homeassistant.components.binary_sensor import BinarySensorEntity
 import gpiod
-from .const import *
+from gpiod.line import Direction, Value
+from .const import GPIO_CHIP, PIN_POWER_LOSS
+
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_platform(hass, config, add_entities, discovery_info=None):
     add_entities([X728PowerLoss()])
@@ -11,17 +16,24 @@ class X728PowerLoss(BinarySensorEntity):
     _attr_device_class = "power"
 
     def __init__(self):
-        self.chip = gpiod.Chip(GPIO_CHIP)
-        self.line = self.chip.get_line(PIN_POWER_LOSS)
-        self.line.request(
-            consumer="x728",
-            type=gpiod.LINE_REQ_DIR_IN
-        )
         self._state = False
 
+        self.chip = gpiod.Chip(GPIO_CHIP)
+
+        settings = gpiod.LineSettings(
+            direction=Direction.INPUT
+        )
+
+        self.request = self.chip.request_lines(
+            consumer="x728",
+            config={PIN_POWER_LOSS: settings}
+        )
+
     def update(self):
-        # 0 = napájení pryč
-        self._state = self.line.get_value() == 0
+        value = self.request.get_value(PIN_POWER_LOSS)
+        # X728: 0 = power lost
+        self._state = (value == Value.INACTIVE)
+        _LOGGER.warning("Čtu GPIO stav: %s", value)
 
     @property
     def is_on(self):

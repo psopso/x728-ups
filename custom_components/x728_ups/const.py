@@ -6,7 +6,7 @@ I2C_ADDR = 0x36  # MAX17048 / MAX17043
 REG_VOLTAGE = 0x02
 REG_CAPACITY = 0x04
 
-GPIO_CHIP = "gpiochip0"
+GPIO_CHIP = "/dev/gpiochip0"
 
 PIN_POWER_LOSS = 6     # GPIO6 – výpadek napájení
 PIN_SHUTDOWN = 26      # GPIO26 – SHUTDOWN pin
