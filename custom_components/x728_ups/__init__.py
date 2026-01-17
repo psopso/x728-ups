@@ -4,6 +4,10 @@ from .const import DOMAIN, PIN_SHUTDOWN, GPIO_CHIP
 import gpiod
 import asyncio
 
+import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 async def async_setup(hass: HomeAssistant, config: dict):
     async def shutdown_host(call):
         chip = gpiod.Chip(GPIO_CHIP)
