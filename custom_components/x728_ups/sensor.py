@@ -1,5 +1,5 @@
 from homeassistant.components.sensor import SensorEntity
-from .const import DOMAIN
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data["x728_ups"][entry.entry_id]
@@ -8,30 +8,28 @@ async def async_setup_entry(hass, entry, async_add_entities):
         X728Capacity(coordinator),
     ])
 
+
 class X728Voltage(CoordinatorEntity, SensorEntity):
     _attr_name = "X728 Battery Voltage"
     _attr_unit_of_measurement = "V"
+    _attr_unique_id = "x728_voltage"
 
     def __init__(self, coordinator):
-        self.coordinator = coordinator
+        super().__init__(coordinator)
 
     @property
-    def state(self):
+    def native_value(self):
         return self.coordinator.data.get("voltage")
 
-    async def async_update(self):
-        await self.coordinator.async_request_refresh()
 
-class X728Capacity(SensorEntity):
+class X728Capacity(CoordinatorEntity, SensorEntity):
     _attr_name = "X728 Battery Capacity"
     _attr_unit_of_measurement = "%"
+    _attr_unique_id = "x728_capacity"
 
     def __init__(self, coordinator):
-        self.coordinator = coordinator
+        super().__init__(coordinator)
 
     @property
-    def state(self):
-        return self.coordinator.data["capacity"]
-
-    async def async_update(self):
-        await self.coordinator.async_request_refresh()
+    def native_value(self):
+        return self.coordinator.data.get("capacity")
