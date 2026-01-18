@@ -3,12 +3,12 @@ from .const import DOMAIN
 
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data["x728_ups"][entry.entry_id]
-    add_entities([
+    async_add_entities([
         X728Voltage(coordinator),
         X728Capacity(coordinator),
     ])
 
-class X728Voltage(SensorEntity):
+class X728Voltage(CoordinatorEntity, SensorEntity):
     _attr_name = "X728 Battery Voltage"
     _attr_unit_of_measurement = "V"
 
