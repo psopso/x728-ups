@@ -3,91 +3,154 @@
 >
 > This integration is currently under active development. It is **not finished** and may not work as expected.
 > Published primarily for easier installation via HACS on my personal setup. Use at your own risk.
-# Suptronics X728 UPS Integration for Home Assistant
 
-This custom component provides native support for the **Suptronics X728 UPS"** (Uninterruptible Power Supply) expansion board. It allows Home Assistant to monitor battery health and manage safe shutdowns during power outages.
+# Suptronics X728 UPS – Home Assistant Integration
 
-## Usage
+Custom Home Assistant integration for the **Suptronics X728 UPS HAT**.
+The integration provides battery monitoring via **I2C** and power / shutdown
+control via **GPIO** using modern Home Assistant architecture
+(`DataUpdateCoordinator`, config entries, UI setup).
 
-### What you need
+---
 
-* **Raspberry Pi** (3B+/4/5) with Home Assistant OS.
-* **Suptronics X728 Board** (Compatible with versions 1.2, 1.3, 2.0, 2.1, 2.3, 2.5).
-* **I2C enabled** on your Home Assistant OS host.
+## Features
 
+- Battery voltage sensor
+- Battery capacity sensor
+- Power loss binary sensor
+- Shutdown button for host system
+- GPIO access via `gpiod`
+- I2C access via `smbus2`
+- Fully UI-configurable (config flow)
+- Graceful handling of missing I2C (GPIO still works)
 
-### GPIO & I2C Pinout
+---
 
-Function | Pin (v1.2 - v1.3) | Pin (v2.0 - v2.5) | Note
----------|------------------|-------------------|-----
-**I2C SDA** | GPIO 2 | GPIO 2 | Data
-**I2C SCL** | GPIO 3 | GPIO 3 | Clock
-**AC Power Loss** | GPIO 6 | GPIO 6 | High = AC OK
-**Low Battery** | GPIO 26 | GPIO 26 | High = Low Bat
-**Shutdown Signal** | GPIO 18 | GPIO 5 | Button/Signal
-**Full Power Off** | GPIO 13 | GPIO 12 | Hardware Cut-off
+## Requirements
+
+- Home Assistant OS / Supervised
+- Raspberry Pi (or compatible SBC)
+- Suptronics X728 UPS HAT
+- Enabled I2C interface
+- Linux GPIO character device (`/dev/gpiochip*`)
+
+---
 
 ## Installation
 
-### 1. Enabling I2C in HAOS
+### Manual installation
 
-I2C is disabled by default in Home Assistant OS. To enable it:
-1. Install **Advanced SSH & Web Terminal** add-on.
-2. Disable **Protection Mode** in the add-on settings.
-3. Run the following command in the terminal:
-   ``bash
-   curl -OSL https://github.com/adamoutler/HassOSConfigurator/raw/main/enable_i2c.sh
-   chmod +x enable_i2c.sh
-   ./enable_i2c.sh
-   ``\
-4. **Reboot your host twice.**
+1. Copy the `x728_ups` directory into:
 
-### 2. Manual Installation
-1. Create a directory `custom_components/x728_ups/`  in your HA config folder.
-2. Copy all files (`__init__.py`, `sensor.py`, `binary_sensor.py`, `manifest.json`) into that folder.
-3. Restart Home Assistant.
+   ```
+   /config/custom_components/x728_ups
+   ```
 
+2. Restart Home Assistant.
+
+3. Go to:
+   **Settings → Devices & Services → Add Integration**
+   and select **Suptronics X728 UPS**.
+
+---
 
 ## Configuration
 
-Add the following to your `configuration.yaml`:
+No YAML configuration is required.
+
+All setup is done through the Home Assistant UI using a config entry.
+The integration will automatically create:
+
+- Sensors
+- Binary sensor
+- Button
+- Device entry
+
+---
+
+## Entities
+
+### Sensors
+
+- **X728 Battery Voltage** (V)
+- **X728 Battery Capacity** (%)
+
+### Binary Sensor
+
+- **X728 Power Loss**
+  - `on` = external power lost
+  - `off` = external power present
+
+### Button
+
+- **X728 Shutdown Host**
+  - Sends a shutdown pulse to the X728 board
+
+---
+
+## GPIO & I2C Details
+
+### GPIO
+
+- Power loss input pin
+- Shutdown output pin
+
+Accessed using the Linux GPIO character device:
+```
+/dev/gpiochip0
+```
+
+### I2C
+
+- Battery monitoring via I2C
+- Default bus: `1`
+- Default address: `0x36`
+
+If I2C communication fails, the integration will:
+- Log a warning
+- Continue operating GPIO-based entities
+
+---
+
+## Logging & Debugging
+
+To enable debug logging, add the following to `configuration.yaml`:
 
 ```yaml
-# X728 UPS Sensors (Voltage and Percentage)
-sensor:
-  - platform: x728_ups
+logger:
+  default: info
+  logs:
+    custom_components.x728_ups: debug
+```
 
-# X728 UPS Status (AC Power and Low Battery)
-binary_sensor:
-  - platform: x728_ups
-```J
+Restart Home Assistant after changing logging settings.
 
-## Automations
+---
 
-### Recommended Safe Shutdown
+## Architecture
 
-This automation ensures that Home Assistant shuts down gracefully when the battery voltage reaches a critical level (3.0V - 3.1V), preventing database and SD card corruption.
+- Uses `DataUpdateCoordinator` for centralized polling
+- All entities are implemented as `CoordinatorEntity`
+- No polling in individual entities
+- Clean unload / reload support
 
-```yaml
-alias: "System: UPS Safe Shutdown"
-trigger:
-  - platform: numeric_state
-    entity_id: sensor.x728_battery_voltage
-    below: 3.1
-condition:
-  - condition: state
-    entity_id: binary_sensor.x728_ac_power_status
-    state: "off"
-action:
-  - service: notify.persistent_notification
-    data:
-      title: "UPS Alert"
-      message: "Battery critical! Initiating safe shutdown."
-  - service: hassio.host_shutdown
-```J
+---
 
-## Troubleshooting
+## Known Limitations
 
-* **No sensors appearing**: Check your Home Assistant logs for `ModuleNotFoundError: No module named 'smbus2' `.
-* **I2C errors**: Verify I2C is active by running `ls /dev/i2c*` in the terminal. You should see `/dev/i2c-1`.
-* **Incorrect Voltage**: Ensure no other HAT is conflicting with the I2C pins (GPIO 2 & 3).
+- Designed for Home Assistant OS / Supervised
+- Requires access to `/dev/gpiochip*`
+- Not tested on container-only installations
+
+---
+
+## License
+
+MIT License
+
+---
+
+## Disclaimer
+
+This integration is not affiliated with Suptronics.
+Use at your own risk.
