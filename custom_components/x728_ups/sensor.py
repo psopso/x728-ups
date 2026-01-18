@@ -1,8 +1,13 @@
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+import logging
+_LOGGER = logging.getLogger(__name__)
+#_LOGGER.info("Pokus")
+
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data["x728_ups"][entry.entry_id]
+    _LOGGER.info("Pred add entity")
     async_add_entities([
         X728Voltage(coordinator),
         X728Capacity(coordinator),

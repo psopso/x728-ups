@@ -3,6 +3,7 @@
   "name": "Suptronics X728 UPS",
   "version": "1.0.0",
   "documentation": "https://github.com/suptronics/x728",
+  "config_flow": true,
   "requirements": [
     "smbus2",
     "gpiod"
