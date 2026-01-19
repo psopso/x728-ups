@@ -11,4 +11,6 @@ GPIO_CHIP = "/dev/gpiochip0"
 PIN_POWER_LOSS = 6
 PIN_SHUTDOWN = 13
 
+PIN_EXT_BUTTON = 5
+
 UPDATE_INTERVAL = 10  # seconds

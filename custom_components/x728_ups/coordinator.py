@@ -25,6 +25,11 @@ class X728Coordinator(DataUpdateCoordinator):
         # GPIO
         self.chip = gpiod.Chip(GPIO_CHIP)
 
+        self.ext_button = self.chip.request_lines(
+            consumer="x728_ext_button",
+            config={PIN_EXT_BUTTON: gpiod.LineSettings(direction=Direction.INPUT)}
+        )
+
         self.power_loss_req = self.chip.request_lines(
             consumer="x728_power",
             config={PIN_POWER_LOSS: gpiod.LineSettings(direction=Direction.INPUT)}
@@ -68,6 +73,6 @@ class X728Coordinator(DataUpdateCoordinator):
     async def shutdown_host(self):
         _LOGGER.info("X728: Sending shutdown pulse")
         self.shutdown_req.set_value(PIN_SHUTDOWN, Value.ACTIVE)
-        await self.hass.async_add_executor_job(lambda: time.sleep(2))
+        await self.hass.async_add_executor_job(lambda: time.sleep(3))
         self.shutdown_req.set_value(PIN_SHUTDOWN, Value.INACTIVE)
         _LOGGER.info("X728: Shutdown pulse done")
