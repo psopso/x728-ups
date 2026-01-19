@@ -1,3 +1,9 @@
+> [!IMPORTANT]
+> **WORK IN PROGRESS / EXPERIMENTAL**
+>
+> This integration is currently under active development. It is **not finished** and may not work as expected.
+> Published primarily for easier installation via HACS on my personal setup. Use at your own risk.
+
 # Suptronics X728 UPS – Home Assistant Integration
 
 Custom Home Assistant integration for the **Suptronics X728 UPS HAT**.
