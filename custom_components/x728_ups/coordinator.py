@@ -44,7 +44,7 @@ class X728Coordinator(DataUpdateCoordinator):
         # --- GPIO ---
         try:
             power_loss_val = self.power_loss_req.get_value(PIN_POWER_LOSS)
-            data["power_loss"] = (power_loss_val == Value.INACTIVE)
+            data["power_loss"] = (power_loss_val != Value.INACTIVE)
         except Exception as err:
             _LOGGER.error("GPIO read failed: %s", err)
             data["power_loss"] = None
