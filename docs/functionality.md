@@ -1,306 +1,135 @@
-\# Functionality Overview
+# X728 Button and GPIO Behavior (Detailed Explanation)
 
+## Summary
+On the **Suptronics X728 UPS board**, the shutdown signal on **GPIO5 (pin 29)** is **not generated simply by pressing the button**.
 
-
-This document describes how the \*\*Suptronics X728 UPS Home Assistant integration\*\*
-
-works internally, what data it uses, and how it behaves in different scenarios.
-
-
-
-The integration is intentionally designed to separate \*\*critical control logic\*\*
-
-from \*\*diagnostic functionality\*\*, ensuring reliability even in degraded states.
-
-
+GPIO5 becomes active **only if the X728 detects that the operating system on Raspberry Pi is running**.  
+This information is provided via **GPIO12 (pin 32)**.
 
 ---
 
+## GPIO Roles
 
+### GPIO12 – BOOT Signal
+- Direction: **output from Raspberry Pi**
+- Logic HIGH (3.3 V) means:
+  **"The operating system is running and ready."**
+- If GPIO12 is NOT HIGH:
+  - The X728 **ignores the button**
+  - GPIO5 remains permanently LOW
 
-\## Architecture Overview
-
-
-
-The integration communicates with the X728 UPS board using two independent
-
-interfaces:
-
-
-
-\- \*\*GPIO\*\* – critical control and power state signals
-
-\- \*\*I2C\*\* – battery diagnostics (voltage and capacity)
-
-
-
-These subsystems are handled independently so that failure of I2C does not
-
-prevent safe system operation.
-
-
+### GPIO5 – SHUTDOWN Signal
+- Direction: **output from X728**
+- A **short pulse** is generated after the button is released
+- The pulse is evaluated by software:
+  - short pulse → reboot
+  - long pulse → shutdown
 
 ---
 
+## Manufacturer Script (Conceptual Overview)
 
+Suptronics provides a reference script which:
 
-\## GPIO – Power Control and State Detection
+1. Exports GPIO12
+2. Sets GPIO12 to HIGH
+3. Monitors GPIO5
+4. Measures pulse duration
+5. Executes:
+   - reboot
+   - or poweroff
 
-
-
-GPIO is considered \*\*mandatory and always active\*\*.
-
-
-
-\### Power Loss Detection
-
-
-
-The X728 board signals loss of external power using a GPIO input:
-
-
-
-\- \*\*GPIO pin:\*\* 6
-
-\- \*\*Direction:\*\* Input
-
-\- \*\*Logic level interpretation:\*\*
-
-&nbsp; - ACTIVE → External power present
-
-&nbsp; - INACTIVE → Running on battery
-
-
-
-This state is exposed in Home Assistant as:
-
-
-
-\- \*\*Binary Sensor: `X728 Power Loss`\*\*
-
-&nbsp; - `ON` → External power lost
-
-&nbsp; - `OFF` → External power present
-
-
-
-This binary sensor can be used for:
-
-\- Automations
-
-\- Notifications
-
-\- Conditional logic (e.g. delayed shutdown)
-
-
+Without this (or equivalent logic),
+**GPIO5 will never generate a pulse.**
 
 ---
 
+## Button Press Behavior
 
+### Case A – GPIO12 = LOW (OS not running / not initialized)
+- Button press:
+  - no pulse generated
+  - GPIO5 stays LOW
+- Multimeter shows constant 0 V
+- This behavior is **intentional and correct**
 
-\### Host Shutdown Trigger
-
-
-
-The X728 board supports host shutdown using a short GPIO pulse:
-
-
-
-\- \*\*GPIO pin:\*\* 26
-
-\- \*\*Direction:\*\* Output
-
-\- \*\*Pulse length:\*\* approximately 2 seconds
-
-
-
-The integration exposes this as:
-
-
-
-\- \*\*Button entity:\*\* `X728 Shutdown Host`
-
-\- \*\*Service:\*\* `x728\_ups.shutdown\_host`
-
-
-
-When triggered:
-
-1\. GPIO output is set ACTIVE
-
-2\. Pulse is held for ~2 seconds
-
-3\. GPIO output is set INACTIVE
-
-4\. X728 initiates host shutdown
-
-
-
-⚠️ The integration does \*\*not\*\* shut down the operating system directly.
-
-It only signals the X728 board, which then handles the shutdown process.
-
-
+### Case B – GPIO12 = HIGH (OS running)
+- Button press:
+  - after release, a pulse appears on GPIO5
+  - pulse width ≈ 200–600 ms
+- Pulse is very short
+- Multimeter usually does **not detect it**
+- Oscilloscope or logic analyzer required
 
 ---
 
+## Design Rationale
 
+This mechanism prevents:
+- false shutdown during boot
+- unintended power-off if OS is frozen
+- undefined GPIO behavior after power-up
 
-\## I2C – Battery Diagnostics
-
-
-
-I2C is used only for \*\*battery monitoring\*\* and is optional.
-
-
-
-\- \*\*Bus:\*\* I2C-1
-
-\- \*\*Device address:\*\* `0x36`
-
-
-
-\### Battery Voltage
-
-
-
-\- \*\*Register:\*\* `0x02`
-
-\- Converted to volts
-
-\- Exposed as:
-
-&nbsp; - \*\*Sensor:\*\* `X728 Battery Voltage`
-
-
-
-\### Battery Capacity
-
-
-
-\- \*\*Register:\*\* `0x04`
-
-\- Converted to percentage
-
-\- Exposed as:
-
-&nbsp; - \*\*Sensor:\*\* `X728 Battery Capacity`
-
-
+X728 logic:
+> "Do not trust the button until the OS confirms it is ready."
 
 ---
 
+## Hardware Test Without OS
 
+For raw hardware testing:
 
-\### Behavior When I2C Fails
+1. Connect:
+   - GPIO12 → 3.3 V (pin 1)
+2. Attach:
+   - oscilloscope / logic analyzer to GPIO5
+3. Press the button
 
-
-
-If I2C communication fails due to:
-
-\- Disabled I2C
-
-\- Missing battery
-
-\- Hardware error
-
-\- Bus conflict
-
-
-
-Then:
-
-\- Voltage and capacity sensors return `None`
-
-\- No exception propagates to Home Assistant
-
-\- GPIO functionality remains fully operational
-
-
-
-This ensures that:
-
-\- Power loss detection continues to work
-
-\- Shutdown functionality remains available
-
-\- The integration remains stable
-
-
+➡️ A pulse will appear  
+➡️ A multimeter will likely still miss it
 
 ---
 
+## Implications for Home Assistant and Custom Integrations
 
-
-\## Data Update Model
-
-
-
-The integration uses Home Assistant’s `DataUpdateCoordinator`:
-
-
-
-\- \*\*Update interval:\*\* 10 seconds
-
-\- Single centralized data refresh
-
-\- All entities read from the same data snapshot
-
-
-
-Benefits:
-
-\- No duplicate GPIO or I2C reads
-
-\- Consistent state across entities
-
-\- Minimal system load
-
-
+- The integration **must actively drive GPIO12**
+- Without this:
+  - the X728 button appears non-functional
+  - but the hardware is operating correctly
+- GPIO5 is **pulse-based**, not a static state
 
 ---
 
+## One-Sentence Summary
 
+**X728 will never generate a shutdown pulse on GPIO5 until Raspberry Pi explicitly sets GPIO12 to HIGH.**
 
-\## Design Rationale
-
-
-
-| Aspect | Design Choice |
-
-|------|--------------|
-
-| GPIO | Always available, critical |
-
-| I2C | Optional, diagnostic only |
-
-| Failure handling | Graceful degradation |
-
-| Shutdown | Hardware-triggered |
-
-| Updates | Centralized coordinator |
-
-
-
----
-
-
-
-\## Summary
-
-
-
-\- GPIO ensures reliable power state detection and shutdown signaling
-
-\- I2C provides battery diagnostics without affecting core functionality
-
-\- The integration remains operational even with partial hardware failure
-
-\- Designed for stability and predictable behavior
-
-
-
-This makes the integration suitable for unattended systems and long-term use.
-
-
+Tlačítko X728
+┌───────────────┐
+│   STISK       │
+└───────┬───────┘
+        │
+        ▼
++-------------------------------+
+| X728 kontroluje GPIO12 (BOOT) |
++-------------------------------+
+        │
+        ├── GPIO12 = 0
+        │      │
+        │      └─► NIC SE NEDĚJE
+        │          GPIO5 = 0
+        │
+        └── GPIO12 = 1
+               │
+               ▼
+      po uvolnění tlačítka
+               │
+               ▼
+        krátký impuls na GPIO5
+               │
+               ▼
+      Raspberry Pi vyhodnotí délku
+        │              │
+        │              └─ dlouhý impuls → shutdown
+        └─ krátký impuls → reboot
 
