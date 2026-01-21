@@ -4,7 +4,7 @@ from .const import DOMAIN
 
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([X728ShutdownButton(coordinator, entry.entry_id)])
+    async_add_entities([X728ShutdownButton(coordinator, entry.entry_id), X728InstallOsHandlerButton(coordinator, entry.entry_id)])
 
 class X728ShutdownButton(CoordinatorEntity, ButtonEntity):
     _attr_name = "X728 Shutdown Host"
@@ -29,7 +29,7 @@ class X728ShutdownButton(CoordinatorEntity, ButtonEntity):
         # dostupnost buttonu závisí na GPIO
         return self.coordinator.data.get("power_loss") is not None
 
-class X728InstallOsHandlerButton(ButtonEntity):
+class X728InstallOsHandlerButton(CoordinatorEntity, ButtonEntity):
     _attr_name = "Install X728 OS Button Handler"
 
     async def async_press(self):
@@ -38,3 +38,11 @@ class X728InstallOsHandlerButton(ButtonEntity):
 
         await self.hass.async_add_executor_job(install)
         notify_restart_required(self.hass)
+
+    @property
+    def device_info(self):
+        return {
+            "identifiers": {(DOMAIN, "x728_ups")},
+            "name": "Suptronics X728 UPS",
+        }
+
