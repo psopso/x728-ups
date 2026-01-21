@@ -32,6 +32,10 @@ class X728ShutdownButton(CoordinatorEntity, ButtonEntity):
 class X728InstallOsHandlerButton(CoordinatorEntity, ButtonEntity):
     _attr_name = "Install X728 OS Button Handler"
 
+    def __init__(self, coordinator, entry_id):
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry_id}_install"
+
     async def async_press(self):
         from .os_helper.installer import install
         from .os_helper.notifier import notify_restart_required
