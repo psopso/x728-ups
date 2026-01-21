@@ -28,3 +28,13 @@ class X728ShutdownButton(CoordinatorEntity, ButtonEntity):
     def available(self):
         # dostupnost buttonu závisí na GPIO
         return self.coordinator.data.get("power_loss") is not None
+
+class X728InstallOsHandlerButton(ButtonEntity):
+    _attr_name = "Install X728 OS Button Handler"
+
+    async def async_press(self):
+        from .os_helper.installer import install
+        from .os_helper.notifier import notify_restart_required
+
+        await self.hass.async_add_executor_job(install)
+        notify_restart_required(self.hass)
