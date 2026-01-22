@@ -58,7 +58,9 @@ class X728Coordinator(DataUpdateCoordinator):
         try:
             raw_v = self.bus.read_word_data(I2C_ADDR, REG_VOLTAGE)
             raw_v = ((raw_v >> 8) | (raw_v << 8)) & 0xFFFF
-            data["voltage"] = round(raw_v * 1.25 / 1000, 2)
+            #data["voltage"] = round(raw_v * 1.25 / 1000, 2)
+            data["voltage"] = raw_v
+
 
             raw_c = self.bus.read_word_data(I2C_ADDR, REG_CAPACITY)
             raw_c = ((raw_c >> 8) | (raw_c << 8)) & 0xFFFF
@@ -71,8 +73,8 @@ class X728Coordinator(DataUpdateCoordinator):
         return data
 
     async def shutdown_host(self):
-        _LOGGER.info("X728: Sending shutdown pulse")
-        self.shutdown_req.set_value(PIN_SHUTDOWN, Value.ACTIVE)
-        await self.hass.async_add_executor_job(lambda: time.sleep(3))
-        self.shutdown_req.set_value(PIN_SHUTDOWN, Value.INACTIVE)
-        _LOGGER.info("X728: Shutdown pulse done")
+        await hass.services.async_call(
+            "homeassistant",
+            "shutdown",
+            blocking=True,
+    )
