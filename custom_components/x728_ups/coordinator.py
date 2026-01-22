@@ -25,11 +25,6 @@ class X728Coordinator(DataUpdateCoordinator):
         # GPIO
         self.chip = gpiod.Chip(GPIO_CHIP)
 
-        self.ext_button = self.chip.request_lines(
-            consumer="x728_ext_button",
-            config={PIN_EXT_BUTTON: gpiod.LineSettings(direction=Direction.INPUT)}
-        )
-
         self.power_loss_req = self.chip.request_lines(
             consumer="x728_power",
             config={PIN_POWER_LOSS: gpiod.LineSettings(direction=Direction.INPUT)}
