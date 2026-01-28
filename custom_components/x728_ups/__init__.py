@@ -4,7 +4,7 @@ from .coordinator import X728Coordinator
 import logging
 
 _LOGGER = logging.getLogger(__name__)
-PLATFORMS = ["sensor", "binary_sensor", "button"]
+PLATFORMS = ["sensor", "binary_sensor"]
 
 _LOGGER.info("Startuji X728 UPS Integration")
 
