@@ -29,7 +29,7 @@ class X728Coordinator(DataUpdateCoordinator):
             consumer="x728_power",
             config={PIN_POWER_LOSS: gpiod.LineSettings(direction=Direction.INPUT)}
         )
-
+'''
         self.shutdown_req = self.chip.request_lines(
             consumer="x728_shutdown",
             config={PIN_SHUTDOWN: gpiod.LineSettings(
@@ -37,7 +37,7 @@ class X728Coordinator(DataUpdateCoordinator):
                 output_value=Value.INACTIVE
             )}
         )
-
+'''
     async def _async_update_data(self):
         data = {}
 
@@ -66,10 +66,11 @@ class X728Coordinator(DataUpdateCoordinator):
             data["capacity"] = None
 
         return data
-
+'''
     async def shutdown_host(self):
         await hass.services.async_call(
             "homeassistant",
             "shutdown",
             blocking=True,
     )
+'''
